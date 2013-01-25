@@ -37,14 +37,26 @@
 # ### foreman_log
 # Sets the foreman log path. Defaults to *shared/log*
 
-set_default :foreman_app,  lambda { application }
-set_default :foreman_user, lambda { user }
-set_default :foreman_log,  lambda { "#{deploy_to!}/#{shared_path}/log" }
+set_default :foreman_app,         lambda { application }
+set_default :foreman_user,        lambda { user }
+set_default :foreman_log,         lambda { "#{deploy_to!}/#{shared_path}/log" }
+set_default :foreman_env,         false
+set_default :foreman_format,      "upstart"
+set_default :foreman_location,    "/etc/init"
+set_default :foreman_procfile,    "Procfile"
+set_default :foreman_concurrency, false
 
 namespace :foreman do
   desc 'Export the Procfile to Ubuntu upstart scripts'
   task :export do
-    export_cmd = "sudo bundle exec foreman export upstart /etc/init -a #{foreman_app} -u #{foreman_user} -l #{foreman_log}"
+    args = ["#{foreman_format} #{foreman_location}"]
+    args << "--procfile #{foreman_procfile}"
+    args << "--app #{foreman_app}"
+    args << "--user #{foreman_user}"
+    args << "--env #{foreman_env}" if foreman_env
+    args << "--log #{foreman_log}"
+    args << "--concurrency #{foreman_concurrency}" if foreman_concurrency
+    export_cmd = "sudo bundle exec foreman export #{args.join(' ')}"
 
     queue %{
       echo "-----> Exporting foreman procfile for #{foreman_app}"
